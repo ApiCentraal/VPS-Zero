@@ -172,6 +172,7 @@ docker-compose logs
 
 Zie de volgende guides voor meer details:
 
+- 🚀 [DEPLOYMENT-GUIDE.md](DEPLOYMENT-GUIDE.md) - **Complete deployment walkthrough**
 - 📘 [SECURITY-CONFIG.md](SECURITY-CONFIG.md) - Complete security configuratie gids
 - 🔐 [SECRETS-MANAGEMENT.md](SECRETS-MANAGEMENT.md) - Secrets management guide
 - 📁 [configs/README.md](configs/README.md) - Configuratie directory overview
