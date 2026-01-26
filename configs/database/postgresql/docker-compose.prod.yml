@@ -1,0 +1,114 @@
+version: '3.9'
+
+services:
+  postgresql:
+    image: postgres:16-alpine
+    container_name: postgres_prod
+    restart: unless-stopped
+    
+    # Security: Run as non-root user
+    user: postgres
+    
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '1'
+          memory: 1G
+    
+    # Security options
+    security_opt:
+      - no-new-privileges:true
+      - seccomp:unconfined
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETGID
+      - SETUID
+      - DAC_OVERRIDE
+    
+    # Read-only root filesystem
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /run
+      - /var/run/postgresql:uid=70,gid=70
+    
+    environment:
+      # Use secrets instead of plain text passwords
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
+      POSTGRES_USER_FILE: /run/secrets/postgres_user
+      POSTGRES_DB: ${POSTGRES_DB:-production}
+      
+      # Security settings
+      POSTGRES_HOST_AUTH_METHOD: scram-sha-256
+      POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256 --auth-local=scram-sha-256"
+      
+    secrets:
+      - postgres_password
+      - postgres_user
+    
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./postgresql.conf:/etc/postgresql/postgresql.conf:ro
+      - ./pg_hba.conf:/etc/postgresql/pg_hba.conf:ro
+      - postgres_logs:/var/log/postgresql
+    
+    command: >
+      postgres
+      -c config_file=/etc/postgresql/postgresql.conf
+      -c hba_file=/etc/postgresql/pg_hba.conf
+      -c ssl=on
+      -c ssl_cert_file=/var/lib/postgresql/data/server.crt
+      -c ssl_key_file=/var/lib/postgresql/data/server.key
+      -c ssl_ca_file=/var/lib/postgresql/data/ca.crt
+    
+    networks:
+      - database_network
+    
+    # Health check
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    
+    # Logging
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+        labels: "production,postgresql"
+
+secrets:
+  postgres_password:
+    file: ./secrets/postgres_password.txt
+  postgres_user:
+    file: ./secrets/postgres_user.txt
+
+volumes:
+  postgres_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /var/lib/postgresql/data
+  postgres_logs:
+    driver: local
+
+networks:
+  database_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/24
+    driver_opts:
+      com.docker.network.bridge.name: br-postgres
+      com.docker.network.bridge.enable_ip_masquerade: "true"
+      com.docker.network.bridge.enable_icc: "false"

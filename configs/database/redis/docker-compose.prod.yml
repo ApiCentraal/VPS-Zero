@@ -1,0 +1,81 @@
+version: '3.9'
+
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: redis_prod
+    restart: unless-stopped
+    
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    
+    # Security options
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - SETGID
+      - SETUID
+      - DAC_OVERRIDE
+    
+    # Read-only root filesystem
+    read_only: true
+    tmpfs:
+      - /tmp
+    
+    volumes:
+      - redis_data:/data
+      - ./redis.conf:/usr/local/etc/redis/redis.conf:ro
+      - redis_logs:/var/log/redis
+    
+    command: >
+      redis-server /usr/local/etc/redis/redis.conf
+      --requirepass ${REDIS_PASSWORD}
+      --tls-port 6380
+      --port 0
+      --tls-cert-file /data/redis.crt
+      --tls-key-file /data/redis.key
+      --tls-ca-cert-file /data/ca.crt
+      --tls-auth-clients yes
+    
+    networks:
+      - database_network
+    
+    # Health check
+    healthcheck:
+      test: ["CMD", "redis-cli", "--tls", "--cert", "/data/redis.crt", "--key", "/data/redis.key", "--cacert", "/data/ca.crt", "-p", "6380", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    
+    # Logging
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+        labels: "production,redis"
+
+volumes:
+  redis_data:
+    driver: local
+  redis_logs:
+    driver: local
+
+networks:
+  database_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.23.0.0/24
+    driver_opts:
+      com.docker.network.bridge.name: br-redis

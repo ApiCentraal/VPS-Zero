@@ -2,6 +2,8 @@
 
 Enterprise Production Server Hardening Script voor Ubuntu 24.04 LTS. Dit script biedt een complete oplossing voor het beveiligen van VPS servers voor het draaien van gecontaineriseerde applicaties.
 
+**🆕 NIEUW:** Enterprise-grade database configuraties, secrets management, en cybersecurity tools toegevoegd! Zie [configs/](configs/) directory voor complete database security setup.
+
 ## 🚀 Snelle Start
 
 ```bash
@@ -112,6 +114,79 @@ export CUSTOM_SSH_PORT=2222  # Nieuwe SSH poort
 
 # Admin email voor notificaties
 export ADMIN_EMAIL=admin@example.com
+```
+
+## 🗄️ Database & Application Security
+
+VPS-Zero bevat nu **enterprise-grade configuraties** voor een volledig beveiligde database en application omgeving:
+
+### Database Support
+- **PostgreSQL** - TLS, SCRAM-SHA-256, WAL archiving
+- **MySQL** - SSL/TLS, caching_sha2_password, replicatie
+- **MongoDB** - TLS, authorization, WiredTiger
+- **Redis** - TLS only, ACL, password auth
+
+### Security Features
+- ✅ **Zero-Attack Surface** - Minimale attack oppervlak
+- ✅ **Defense in Depth** - Meerdere beveiligingslagen  
+- ✅ **Encryption Everywhere** - Data-at-rest en in-transit
+- ✅ **Secrets Management** - Docker Secrets + Vault support
+- ✅ **Container Hardening** - Read-only FS, no-root, seccomp
+- ✅ **Network Isolation** - Geïsoleerde Docker networks
+- ✅ **Automated Backups** - Encrypted, rotatie, cloud upload
+- ✅ **Security Scanning** - Trivy, CIS Benchmark, secrets scan
+
+### Configuratie Directories
+
+| Directory | Beschrijving |
+|-----------|--------------|
+| `configs/database/` | Database configuraties (PostgreSQL, MySQL, MongoDB, Redis) |
+| `configs/docker/` | Docker security hardening (daemon.json, seccomp) |
+| `configs/security/` | Security scripts (backup, scanning) |
+| `configs/ssl/` | SSL/TLS certificate generation |
+| `configs/.env.*` | Environment templates (dev/prod) |
+| `secrets/` | Secret management templates |
+
+### Quick Start Database
+
+```bash
+# 1. Genereer SSL/TLS certificaten
+cd configs/ssl
+sudo ./generate-certificates.sh all
+
+# 2. Setup secrets
+cd ../
+cp .env.production.template .env.production
+# Edit en vervang alle CHANGEME waarden
+
+# 3. Deploy database (bijvoorbeeld PostgreSQL)
+cd database/postgresql
+docker-compose -f docker-compose.prod.yml up -d
+
+# 4. Verifieer
+docker-compose ps
+docker-compose logs
+```
+
+### Documentatie
+
+Zie de volgende guides voor meer details:
+
+- 📘 [SECURITY-CONFIG.md](SECURITY-CONFIG.md) - Complete security configuratie gids
+- 🔐 [SECRETS-MANAGEMENT.md](SECRETS-MANAGEMENT.md) - Secrets management guide
+- 📁 [configs/README.md](configs/README.md) - Configuratie directory overview
+
+### Security Tools
+
+```bash
+# Encrypted database backups
+./configs/security/backup-databases.sh all
+
+# Security scanning (Trivy, CIS Docker Benchmark)
+sudo ./configs/security/security-scan.sh --full
+
+# Certificate generation
+sudo ./configs/ssl/generate-certificates.sh all
 ```
 
 ## 📄 Licentie

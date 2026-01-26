@@ -1,0 +1,90 @@
+version: '3.9'
+
+services:
+  mongodb:
+    image: mongo:7
+    container_name: mongodb_prod
+    restart: unless-stopped
+    
+    # Security: Run as mongodb user
+    user: mongodb
+    
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '1'
+          memory: 1G
+    
+    # Security options
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETGID
+      - SETUID
+      - DAC_OVERRIDE
+    
+    environment:
+      MONGO_INITDB_ROOT_USERNAME_FILE: /run/secrets/mongo_root_user
+      MONGO_INITDB_ROOT_PASSWORD_FILE: /run/secrets/mongo_root_password
+      MONGO_INITDB_DATABASE: ${MONGO_DATABASE:-production}
+      
+    secrets:
+      - mongo_root_user
+      - mongo_root_password
+    
+    volumes:
+      - mongodb_data:/data/db
+      - mongodb_config:/data/configdb
+      - ./mongod.conf:/etc/mongod.conf:ro
+      - mongodb_logs:/var/log/mongodb
+    
+    command: ["mongod", "--config", "/etc/mongod.conf"]
+    
+    networks:
+      - database_network
+    
+    # Health check
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+    
+    # Logging
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+        labels: "production,mongodb"
+
+secrets:
+  mongo_root_user:
+    file: ./secrets/mongo_root_user.txt
+  mongo_root_password:
+    file: ./secrets/mongo_root_password.txt
+
+volumes:
+  mongodb_data:
+    driver: local
+  mongodb_config:
+    driver: local
+  mongodb_logs:
+    driver: local
+
+networks:
+  database_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.22.0.0/24
+    driver_opts:
+      com.docker.network.bridge.name: br-mongo

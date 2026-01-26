@@ -1,0 +1,102 @@
+version: '3.9'
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: mysql_prod
+    restart: unless-stopped
+    
+    # Security: Run as mysql user
+    user: mysql
+    
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '1'
+          memory: 1G
+    
+    # Security options
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETGID
+      - SETUID
+      - DAC_OVERRIDE
+    
+    # Read-only root filesystem
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /run/mysqld
+    
+    environment:
+      MYSQL_ROOT_PASSWORD_FILE: /run/secrets/mysql_root_password
+      MYSQL_USER_FILE: /run/secrets/mysql_user
+      MYSQL_PASSWORD_FILE: /run/secrets/mysql_password
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-production}
+      
+    secrets:
+      - mysql_root_password
+      - mysql_user
+      - mysql_password
+    
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./my.cnf:/etc/mysql/conf.d/my.cnf:ro
+      - mysql_logs:/var/log/mysql
+    
+    command: >
+      --default-authentication-plugin=caching_sha2_password
+      --require-secure-transport=ON
+      --ssl-ca=/var/lib/mysql/ca.pem
+      --ssl-cert=/var/lib/mysql/server-cert.pem
+      --ssl-key=/var/lib/mysql/server-key.pem
+    
+    networks:
+      - database_network
+    
+    # Health check
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    
+    # Logging
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+        labels: "production,mysql"
+
+secrets:
+  mysql_root_password:
+    file: ./secrets/mysql_root_password.txt
+  mysql_user:
+    file: ./secrets/mysql_user.txt
+  mysql_password:
+    file: ./secrets/mysql_password.txt
+
+volumes:
+  mysql_data:
+    driver: local
+  mysql_logs:
+    driver: local
+
+networks:
+  database_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.21.0.0/24
+    driver_opts:
+      com.docker.network.bridge.name: br-mysql
