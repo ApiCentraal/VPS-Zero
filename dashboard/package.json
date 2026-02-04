@@ -1,0 +1,30 @@
+{
+  "name": "vps-zero-dashboard",
+  "version": "1.0.0",
+  "description": "VPS-Zero Web Dashboard - Enterprise Ubuntu Server Configuration GUI",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node src/server.js"
+  },
+  "keywords": [
+    "vps",
+    "server",
+    "hardening",
+    "ubuntu",
+    "dashboard",
+    "security"
+  ],
+  "author": "VPS-Zero Team",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.21.0",
+    "express-session": "^1.18.0",
+    "bcryptjs": "^2.4.3",
+    "helmet": "^7.1.0",
+    "express-rate-limit": "^7.4.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

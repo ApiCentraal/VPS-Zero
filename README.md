@@ -4,6 +4,10 @@ Enterprise Production Server Hardening Script voor Ubuntu 24.04 LTS. Dit script 
 
 **🆕 NIEUW:** Enterprise-grade database configuraties, secrets management, en cybersecurity tools toegevoegd! Zie [configs/](configs/) directory voor complete database security setup.
 
+**🖥️ WEB DASHBOARD:** Nu met een moderne web-based GUI voor server configuratie! Zie [dashboard/](dashboard/) voor installatie.
+
+![Dashboard Preview](dashboard/docs/dashboard-preview.png)
+
 ## 🚀 Snelle Start
 
 ```bash
@@ -18,6 +22,17 @@ sudo ./server-hardening.sh --full
 
 # Help weergeven
 sudo ./server-hardening.sh --help
+```
+
+### 🖥️ Web Dashboard Installatie
+
+```bash
+# Installeer de web dashboard
+cd dashboard
+sudo ./install-dashboard.sh
+
+# Dashboard is beschikbaar op http://SERVER_IP:8080
+# Standaard login: admin / changeme
 ```
 
 ## ✨ Features
@@ -52,6 +67,22 @@ sudo ./server-hardening.sh --help
 | 20 | Status | Systeem status dashboard |
 | 21 | Security Audit | Lynis security scan |
 | 22 | Backup | Configuratie backup maken |
+
+### 🖥️ Web Dashboard
+
+Het VPS-Zero dashboard biedt een moderne, browser-based interface voor:
+
+- **Systeem Overzicht** - Real-time CPU, geheugen, schijf en uptime monitoring
+- **Server Hardening** - Eén-klik toegang tot alle 16 hardening modules
+- **Docker Management** - Bekijk en beheer containers en images
+- **Firewall Configuratie** - Voeg UFW regels toe via GUI
+- **SSH Instellingen** - Configureer SSH security parameters
+- **Database Deployment** - Quick-deploy PostgreSQL, MySQL, MongoDB, Redis
+- **SSL Certificaten** - Genereer self-signed certificaten
+- **Security Tools** - Security scans en encrypted backups
+- **Log Viewer** - Bekijk systeem logs in één interface
+
+Zie [dashboard/README.md](dashboard/README.md) voor volledige documentatie.
 
 ## 🔧 Geïmplementeerde Hardening
 
