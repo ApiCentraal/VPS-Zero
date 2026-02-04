@@ -31,6 +31,35 @@ cd /path/to/VPS-Zero/dashboard
 sudo ./install-dashboard.sh
 ```
 
+### Start via Main Script
+
+```bash
+# Start dashboard from the main script
+sudo ./server-hardening.sh --gui
+```
+
+### Dashboard Command
+
+After installation, the `vps-zero-dashboard` command is available system-wide:
+
+```bash
+# Start dashboard service
+sudo vps-zero-dashboard --start
+sudo vps-zero-dashboard --yes    # Alias for --start
+
+# Stop dashboard
+sudo vps-zero-dashboard --stop
+
+# Restart dashboard  
+sudo vps-zero-dashboard --restart
+
+# Show status
+vps-zero-dashboard --status
+
+# Start in foreground mode (for debugging)
+sudo vps-zero-dashboard --foreground
+```
+
 ### Manual Install
 
 ```bash

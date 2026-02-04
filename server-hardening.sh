@@ -934,6 +934,22 @@ backup_configuration() {
 ################################################################################
 
 main() {
+    # Handle help first (doesn't need root)
+    if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
+        echo "Gebruik: $0 [OPTIE]"
+        echo ""
+        echo "Opties:"
+        echo "  --full, -f    Volledige automatische installatie"
+        echo "  --gui, -g     Start de web dashboard (GUI)"
+        echo "  --help, -h    Deze help tekst"
+        echo ""
+        echo "Zonder opties wordt het interactieve menu getoond"
+        echo ""
+        echo "Dashboard commando:"
+        echo "  Na installatie: vps-zero-dashboard [--start|--stop|--status]"
+        exit 0
+    fi
+    
     check_root
     
     # Setup logging directory
@@ -989,15 +1005,60 @@ main() {
     # Non-interactive mode
     if [[ "$1" == "--full" || "$1" == "-f" ]]; then
         full_installation
-    elif [[ "$1" == "--help" || "$1" == "-h" ]]; then
-        echo "Gebruik: $0 [OPTIE]"
-        echo ""
-        echo "Opties:"
-        echo "  --full, -f    Volledige automatische installatie"
-        echo "  --help, -h    Deze help tekst"
-        echo ""
-        echo "Zonder opties wordt het interactieve menu getoond"
+    elif [[ "$1" == "--gui" || "$1" == "-g" ]]; then
+        start_dashboard
     fi
+}
+
+################################################################################
+# DASHBOARD FUNCTIES
+################################################################################
+
+# Start dashboard functie
+start_dashboard() {
+    local SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    local DASHBOARD_DIR="${SCRIPT_DIR}/dashboard"
+    local DASHBOARD_PORT="${DASHBOARD_PORT:-8080}"
+    
+    info "=== VPS-Zero Dashboard Starten ==="
+    
+    # Check of dashboard directory bestaat
+    if [[ ! -d "$DASHBOARD_DIR" ]]; then
+        error "Dashboard directory niet gevonden: $DASHBOARD_DIR"
+        error "Voer eerst de installatie uit met: cd dashboard && sudo ./install-dashboard.sh"
+        exit 1
+    fi
+    
+    # Check of Node.js geïnstalleerd is
+    if ! command -v node &> /dev/null; then
+        error "Node.js is niet geïnstalleerd"
+        info "Installeer Node.js met: curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash - && sudo apt-get install -y nodejs"
+        exit 1
+    fi
+    
+    # Check of npm dependencies geïnstalleerd zijn
+    if [[ ! -d "${DASHBOARD_DIR}/node_modules" ]]; then
+        info "Installeren van npm dependencies..."
+        cd "$DASHBOARD_DIR"
+        npm install --production
+    fi
+    
+    # Check of de service al draait
+    if systemctl is-active --quiet vps-zero-dashboard 2>/dev/null; then
+        local SERVER_IP=$(hostname -I | awk '{print $1}')
+        success "Dashboard draait al als systemd service"
+        info "URL: http://${SERVER_IP}:${DASHBOARD_PORT}"
+        info "Beheer met: sudo systemctl [start|stop|restart|status] vps-zero-dashboard"
+        return 0
+    fi
+    
+    # Start dashboard in foreground mode
+    info "Dashboard starten op poort ${DASHBOARD_PORT}..."
+    info "Druk Ctrl+C om te stoppen"
+    echo ""
+    
+    cd "$DASHBOARD_DIR"
+    DASHBOARD_PORT="${DASHBOARD_PORT}" node src/server.js
 }
 
 # Start script

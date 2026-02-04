@@ -32,7 +32,7 @@ echo "║                                                              ║"
 echo "║   VPS-Zero Dashboard Installer                               ║"
 echo "║   Enterprise Ubuntu Server Configuration GUI                 ║"
 echo "║                                                              ║"
-╚══════════════════════════════════════════════════════════════╝"
+echo "╚══════════════════════════════════════════════════════════════╝"
 echo ""
 
 # Get script directory
@@ -147,6 +147,14 @@ if command -v ufw &> /dev/null && ufw status | grep -q "Status: active"; then
     success "Firewall rule added for port $DASHBOARD_PORT"
 fi
 
+# Create symlink for vps-zero-dashboard command
+info "Creating vps-zero-dashboard command..."
+if [[ -f "${DASHBOARD_DIR}/vps-zero-dashboard" ]]; then
+    chmod +x "${DASHBOARD_DIR}/vps-zero-dashboard"
+    ln -sf "${DASHBOARD_DIR}/vps-zero-dashboard" /usr/local/bin/vps-zero-dashboard
+    success "Command 'vps-zero-dashboard' is now available system-wide"
+fi
+
 # Get server IP
 SERVER_IP=$(hostname -I | awk '{print $1}')
 
@@ -163,12 +171,17 @@ echo "║   Password: changeme                                         ║"
 echo "║                                                              ║"
 echo "║   ⚠️  IMPORTANT: Change the default password immediately!    ║"
 echo "║                                                              ║"
+echo "║   Dashboard Commands:                                        ║"
+echo "║   vps-zero-dashboard --start   Start dashboard               ║"
+echo "║   vps-zero-dashboard --stop    Stop dashboard                ║"
+echo "║   vps-zero-dashboard --status  Show status                   ║"
+echo "║                                                              ║"
 echo "║   Service Management:                                        ║"
 echo "║   sudo systemctl status ${SERVICE_NAME}                      "
 echo "║   sudo systemctl restart ${SERVICE_NAME}                     "
 echo "║   sudo journalctl -u ${SERVICE_NAME} -f                      "
 echo "║                                                              ║"
-╚══════════════════════════════════════════════════════════════╝"
+echo "╚══════════════════════════════════════════════════════════════╝"
 echo ""
 
 success "VPS-Zero Dashboard installed successfully!"

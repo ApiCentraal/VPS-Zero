@@ -20,6 +20,9 @@ sudo ./server-hardening.sh
 # Of volledige automatische installatie
 sudo ./server-hardening.sh --full
 
+# Start de web dashboard (GUI)
+sudo ./server-hardening.sh --gui
+
 # Help weergeven
 sudo ./server-hardening.sh --help
 ```
@@ -33,6 +36,31 @@ sudo ./install-dashboard.sh
 
 # Dashboard is beschikbaar op http://SERVER_IP:8080
 # Standaard login: admin / changeme
+
+# Na installatie kan je de dashboard starten met:
+vps-zero-dashboard --start
+# of
+vps-zero-dashboard --yes
+```
+
+### Dashboard Commando's
+
+```bash
+# Start dashboard service
+sudo vps-zero-dashboard --start
+sudo vps-zero-dashboard --yes
+
+# Stop dashboard
+sudo vps-zero-dashboard --stop
+
+# Herstart dashboard
+sudo vps-zero-dashboard --restart
+
+# Toon status
+vps-zero-dashboard --status
+
+# Start in foreground (voor debugging)
+sudo vps-zero-dashboard --foreground
 ```
 
 ## ✨ Features
