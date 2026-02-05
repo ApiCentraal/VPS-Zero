@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VPS-Zero Dashboard</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/dashboard.css">
+</head>
+<body>
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <i class="fas fa-server"></i>
+            <span>VPS-Zero</span>
+        </div>
+        
+        <nav class="sidebar-nav">
+            <a href="#" class="nav-item active" data-section="overview">
+                <i class="fas fa-tachometer-alt"></i>
+                <span>Overview</span>
+            </a>
+            <a href="#" class="nav-item" data-section="hardening">
+                <i class="fas fa-shield-alt"></i>
+                <span>Server Hardening</span>
+            </a>
+            <a href="#" class="nav-item" data-section="docker">
+                <i class="fab fa-docker"></i>
+                <span>Docker</span>
+            </a>
+            <a href="#" class="nav-item" data-section="firewall">
+                <i class="fas fa-fire"></i>
+                <span>Firewall</span>
+            </a>
+            <a href="#" class="nav-item" data-section="ssh">
+                <i class="fas fa-terminal"></i>
+                <span>SSH Settings</span>
+            </a>
+            <a href="#" class="nav-item" data-section="databases">
+                <i class="fas fa-database"></i>
+                <span>Databases</span>
+            </a>
+            <a href="#" class="nav-item" data-section="ssl">
+                <i class="fas fa-lock"></i>
+                <span>SSL Certificates</span>
+            </a>
+            <a href="#" class="nav-item" data-section="security">
+                <i class="fas fa-user-shield"></i>
+                <span>Security Tools</span>
+            </a>
+            <a href="#" class="nav-item" data-section="logs">
+                <i class="fas fa-file-alt"></i>
+                <span>Logs</span>
+            </a>
+            <a href="#" class="nav-item" data-section="settings">
+                <i class="fas fa-cog"></i>
+                <span>Settings</span>
+            </a>
+        </nav>
+        
+        <div class="sidebar-footer">
+            <a href="#" id="logoutBtn" class="nav-item">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>Logout</span>
+            </a>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Header -->
+        <header class="header">
+            <button class="sidebar-toggle" id="sidebarToggle">
+                <i class="fas fa-bars"></i>
+            </button>
+            <h1 id="pageTitle">System Overview</h1>
+            <div class="header-actions">
+                <span class="status-indicator" id="serverStatus">
+                    <i class="fas fa-circle"></i> Checking...
+                </span>
+            </div>
+        </header>
+
+        <!-- Content Container -->
+        <div class="content">
+            <!-- Overview Section -->
+            <section id="section-overview" class="section active">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon blue">
+                            <i class="fas fa-microchip"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="cpuLoad">--</h3>
+                            <p>CPU Load (1m)</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon green">
+                            <i class="fas fa-memory"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="memUsage">--</h3>
+                            <p>Memory Usage</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon orange">
+                            <i class="fas fa-hdd"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="diskUsage">--</h3>
+                            <p>Disk Usage</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon purple">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="uptime">--</h3>
+                            <p>Uptime</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="card">
+                        <div class="card-header">
+                            <h2><i class="fas fa-info-circle"></i> System Information</h2>
+                        </div>
+                        <div class="card-body">
+                            <table class="info-table">
+                                <tr><td>Hostname</td><td id="hostname">--</td></tr>
+                                <tr><td>OS Version</td><td id="osVersion">--</td></tr>
+                                <tr><td>Kernel</td><td id="kernelVersion">--</td></tr>
+                                <tr><td>CPU Cores</td><td id="cpuCores">--</td></tr>
+                                <tr><td>Total Memory</td><td id="totalMemory">--</td></tr>
+                                <tr><td>Disk Total</td><td id="diskTotal">--</td></tr>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h2><i class="fas fa-heartbeat"></i> Services Status</h2>
+                            <button class="btn btn-sm" onclick="loadServices()">
+                                <i class="fas fa-sync-alt"></i>
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <div class="services-list" id="servicesList">
+                                <div class="loading"><i class="fas fa-spinner fa-spin"></i> Loading...</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h2><i class="fas fa-check-circle"></i> Configuration Validation</h2>
+                        <button class="btn btn-sm btn-primary" onclick="validateConfigs()">
+                            <i class="fas fa-play"></i> Run Validation
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <pre class="output-box" id="validationOutput">Click "Run Validation" to check your configuration files...</pre>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Hardening Section -->
+            <section id="section-hardening" class="section">
+                <div class="card">
+                    <div class="card-header">
+                        <h2><i class="fas fa-shield-alt"></i> Server Hardening Modules</h2>
+                    </div>
+                    <div class="card-body">
+                        <p class="mb-20">Select individual hardening modules to configure, or run the complete hardening process:</p>
+                        
+                        <div class="modules-grid">
+                            <div class="module-card" data-module="full">
+                                <div class="module-icon red">
+                                    <i class="fas fa-rocket"></i>
+                                </div>
+                                <h3>Full Installation</h3>
+                                <p>Complete server hardening</p>
+                                <button class="btn btn-primary" onclick="runHardening('full')">
+                                    <i class="fas fa-play"></i> Run All
+                                </button>
+                            </div>
+                            
+                            <div class="module-card" data-module="updates">
+                                <div class="module-icon blue">
+                                    <i class="fas fa-sync-alt"></i>
+                                </div>
+                                <h3>System Updates</h3>
+                                <p>APT update & upgrade</p>
+                                <button class="btn btn-sm" onclick="runHardening('updates')">Run</button>
+                            </div>
+                            
+                            <div class="module-card" data-module="docker">
+                                <div class="module-icon blue">
+                                    <i class="fab fa-docker"></i>
+                                </div>
+                                <h3>Docker Engine</h3>
+                                <p>Install & configure Docker</p>
+                                <button class="btn btn-sm" onclick="runHardening('docker')">Run</button>
+                            </div>
+                            
+                            <div class="module-card" data-module="firewall">
+                                <div class="module-icon orange">
+                                    <i class="fas fa-fire"></i>
+                                </div>
+                                <h3>UFW Firewall</h3>
+                                <p>Configure firewall rules</p>
+                                <button class="btn btn-sm" onclick="runHardening('firewall')">Run</button>
+                            </div>
+                            
+                            <div class="module-card" data-module="ssh">
+                                <div class="module-icon green">
+                                    <i class="fas fa-terminal"></i>
+                                </div>
+                                <h3>SSH Hardening</h3>
+                                <p>Secure SSH configuration</p>
+                                <button class="btn btn-sm" onclick="runHardening('ssh')">Run</button>
+                            </div>
+                            
+                            <div class="module-card" data-module="fail2ban">
+                                <div class="module-icon purple">
+                                    <i class="fas fa-ban"></i>
+                                </div>
+                                <h3>Fail2Ban</h3>
+                                <p>Brute-force protection</p>
+                                <button class="btn btn-sm" onclick="runHardening('fail2ban')">Run</button>
+                            </div>
+                            
+                            <div class="module-card" data-module="kernel">
+                                <div class="module-icon red">
+                                    <i class="fas fa-cogs"></i>
+                                </div>
+                                <h3>Kernel Security</h3>
+                                <p>Sysctl parameters</p>
+                                <button class="btn btn-sm" onclick="runHardening('kernel')">Run</button>
+                            </div>
+                            
+                            <div class="module-card" data-module="auditd">
+                                <div class="module-icon blue">
+                                    <i class="fas fa-search"></i>
+                                </div>
+                                <h3>Auditd</h3>
+                                <p>Linux Audit Framework</p>
+                                <button class="btn btn-sm" onclick="runHardening('auditd')">Run</button>
+                            </div>
+                            
+                            <div class="module-card" data-module="autoupdates">
+                                <div class="module-icon green">
+                                    <i class="fas fa-magic"></i>
+                                </div>
+                                <h3>Auto Updates</h3>
+                                <p>Automatic security updates</p>
+                                <button class="btn btn-sm" onclick="runHardening('autoupdates')">Run</button>
+                            </div>
+                            
+                            <div class="module-card" data-module="swap">
+                                <div class="module-icon orange">
+                                    <i class="fas fa-exchange-alt"></i>
+                                </div>
+                                <h3>Swap</h3>
+                                <p>Swap space configuration</p>
+                                <button class="btn btn-sm" onclick="runHardening('swap')">Run</button>
+                            </div>
+                            
+                            <div class="module-card" data-module="filesystem">
+                                <div class="module-icon purple">
+                                    <i class="fas fa-folder-open"></i>
+                                </div>
+                                <h3>Filesystem</h3>
+                                <p>Harden /tmp, /var/tmp</p>
+                                <button class="btn btn-sm" onclick="runHardening('filesystem')">Run</button>
+                            </div>
+                            
+                            <div class="module-card" data-module="logging">
+                                <div class="module-icon blue">
+                                    <i class="fas fa-file-alt"></i>
+                                </div>
+                                <h3>Logging</h3>
+                                <p>Logrotate & journald</p>
+                                <button class="btn btn-sm" onclick="runHardening('logging')">Run</button>
+                            </div>
+                            
+                            <div class="module-card" data-module="users">
+                                <div class="module-icon green">
+                                    <i class="fas fa-users"></i>
+                                </div>
+                                <h3>User Management</h3>
+                                <p>PAM password policy</p>
+                                <button class="btn btn-sm" onclick="runHardening('users')">Run</button>
+                            </div>
+                            
+                            <div class="module-card" data-module="time">
+                                <div class="module-icon orange">
+                                    <i class="fas fa-clock"></i>
+                                </div>
+                                <h3>Time Sync</h3>
+                                <p>NTP synchronization</p>
+                                <button class="btn btn-sm" onclick="runHardening('time')">Run</button>
+                            </div>
+                            
+                            <div class="module-card" data-module="sectools">
+                                <div class="module-icon red">
+                                    <i class="fas fa-tools"></i>
+                                </div>
+                                <h3>Security Tools</h3>
+                                <p>AIDE, rkhunter, lynis</p>
+                                <button class="btn btn-sm" onclick="runHardening('sectools')">Run</button>
+                            </div>
+                            
+                            <div class="module-card" data-module="dockersec">
+                                <div class="module-icon purple">
+                                    <i class="fab fa-docker"></i>
+                                </div>
+                                <h3>Docker Security</h3>
+                                <p>User namespaces, seccomp</p>
+                                <button class="btn btn-sm" onclick="runHardening('dockersec')">Run</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h2><i class="fas fa-terminal"></i> Output</h2>
+                        <button class="btn btn-sm" onclick="clearOutput('hardeningOutput')">
+                            <i class="fas fa-trash"></i> Clear
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <pre class="output-box large" id="hardeningOutput">Select a module to run...</pre>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Docker Section -->
+            <section id="section-docker" class="section">
+                <div class="row">
+                    <div class="card">
+                        <div class="card-header">
+                            <h2><i class="fab fa-docker"></i> Containers</h2>
+                            <button class="btn btn-sm" onclick="loadContainers()">
+                                <i class="fas fa-sync-alt"></i> Refresh
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <div id="containersList" class="table-responsive">
+                                <div class="loading"><i class="fas fa-spinner fa-spin"></i> Loading...</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="card">
+                        <div class="card-header">
+                            <h2><i class="fas fa-images"></i> Images</h2>
+                            <button class="btn btn-sm" onclick="loadImages()">
+                                <i class="fas fa-sync-alt"></i> Refresh
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <div id="imagesList" class="table-responsive">
+                                <div class="loading"><i class="fas fa-spinner fa-spin"></i> Loading...</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Firewall Section -->
+            <section id="section-firewall" class="section">
+                <div class="card">
+                    <div class="card-header">
+                        <h2><i class="fas fa-plus-circle"></i> Add Firewall Rule</h2>
+                    </div>
+                    <div class="card-body">
+                        <form id="firewallForm" class="inline-form">
+                            <div class="form-group">
+                                <label>Action</label>
+                                <select id="fwAction" required>
+                                    <option value="allow">Allow</option>
+                                    <option value="deny">Deny</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Port</label>
+                                <input type="number" id="fwPort" placeholder="e.g., 80" min="1" max="65535" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Protocol</label>
+                                <select id="fwProtocol">
+                                    <option value="tcp">TCP</option>
+                                    <option value="udp">UDP</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>From IP (optional)</label>
+                                <input type="text" id="fwFrom" placeholder="any">
+                            </div>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-plus"></i> Add Rule
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h2><i class="fas fa-list"></i> Current Rules</h2>
+                        <button class="btn btn-sm" onclick="loadFirewallRules()">
+                            <i class="fas fa-sync-alt"></i> Refresh
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <pre class="output-box" id="firewallRules">Loading firewall rules...</pre>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SSH Section -->
+            <section id="section-ssh" class="section">
+                <div class="card">
+                    <div class="card-header">
+                        <h2><i class="fas fa-terminal"></i> SSH Configuration</h2>
+                    </div>
+                    <div class="card-body">
+                        <form id="sshForm">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="sshPort">SSH Port</label>
+                                    <input type="number" id="sshPort" min="1" max="65535" placeholder="22">
+                                </div>
+                                <div class="form-group">
+                                    <label for="maxAuthTries">Max Auth Tries</label>
+                                    <input type="number" id="maxAuthTries" min="1" max="10" placeholder="3">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group checkbox-group">
+                                    <input type="checkbox" id="permitRootLogin">
+                                    <label for="permitRootLogin">Permit Root Login</label>
+                                </div>
+                                <div class="form-group checkbox-group">
+                                    <input type="checkbox" id="passwordAuth">
+                                    <label for="passwordAuth">Password Authentication</label>
+                                </div>
+                            </div>
+                            <div class="form-actions">
+                                <button type="button" class="btn" onclick="loadSSHConfig()">
+                                    <i class="fas fa-sync-alt"></i> Reload Current
+                                </button>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save"></i> Save Configuration
+                                </button>
+                            </div>
+                        </form>
+                        <div class="alert alert-warning mt-20">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <strong>Warning:</strong> Changing SSH settings may disconnect you. Make sure you have console access!
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Databases Section -->
+            <section id="section-databases" class="section">
+                <div class="card">
+                    <div class="card-header">
+                        <h2><i class="fas fa-database"></i> Database Deployment</h2>
+                    </div>
+                    <div class="card-body">
+                        <p class="mb-20">Deploy pre-configured, security-hardened database containers:</p>
+                        
+                        <div class="db-grid">
+                            <div class="db-card">
+                                <div class="db-icon postgresql">
+                                    <i class="fas fa-elephant"></i>
+                                </div>
+                                <h3>PostgreSQL</h3>
+                                <ul class="feature-list">
+                                    <li><i class="fas fa-check"></i> SCRAM-SHA-256 auth</li>
+                                    <li><i class="fas fa-check"></i> TLS 1.2+ required</li>
+                                    <li><i class="fas fa-check"></i> WAL archiving</li>
+                                </ul>
+                                <a href="configs/database/postgresql/" class="btn btn-sm">View Config</a>
+                            </div>
+                            
+                            <div class="db-card">
+                                <div class="db-icon mysql">
+                                    <i class="fas fa-database"></i>
+                                </div>
+                                <h3>MySQL</h3>
+                                <ul class="feature-list">
+                                    <li><i class="fas fa-check"></i> SSL/TLS enforced</li>
+                                    <li><i class="fas fa-check"></i> caching_sha2_password</li>
+                                    <li><i class="fas fa-check"></i> Binary logging</li>
+                                </ul>
+                                <a href="configs/database/mysql/" class="btn btn-sm">View Config</a>
+                            </div>
+                            
+                            <div class="db-card">
+                                <div class="db-icon mongodb">
+                                    <i class="fas fa-leaf"></i>
+                                </div>
+                                <h3>MongoDB</h3>
+                                <ul class="feature-list">
+                                    <li><i class="fas fa-check"></i> TLS required</li>
+                                    <li><i class="fas fa-check"></i> Authorization enabled</li>
+                                    <li><i class="fas fa-check"></i> WiredTiger encryption</li>
+                                </ul>
+                                <a href="configs/database/mongodb/" class="btn btn-sm">View Config</a>
+                            </div>
+                            
+                            <div class="db-card">
+                                <div class="db-icon redis">
+                                    <i class="fas fa-bolt"></i>
+                                </div>
+                                <h3>Redis</h3>
+                                <ul class="feature-list">
+                                    <li><i class="fas fa-check"></i> TLS only (6380)</li>
+                                    <li><i class="fas fa-check"></i> ACL support</li>
+                                    <li><i class="fas fa-check"></i> Protected mode</li>
+                                </ul>
+                                <a href="configs/database/redis/" class="btn btn-sm">View Config</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SSL Section -->
+            <section id="section-ssl" class="section">
+                <div class="card">
+                    <div class="card-header">
+                        <h2><i class="fas fa-lock"></i> SSL Certificate Generation</h2>
+                    </div>
+                    <div class="card-body">
+                        <p class="mb-20">Generate self-signed SSL/TLS certificates for development or internal use:</p>
+                        
+                        <div class="btn-group">
+                            <button class="btn btn-primary" onclick="generateSSL('all')">
+                                <i class="fas fa-certificate"></i> Generate All Certificates
+                            </button>
+                            <button class="btn" onclick="generateSSL('postgresql')">PostgreSQL</button>
+                            <button class="btn" onclick="generateSSL('mysql')">MySQL</button>
+                            <button class="btn" onclick="generateSSL('mongodb')">MongoDB</button>
+                            <button class="btn" onclick="generateSSL('redis')">Redis</button>
+                        </div>
+                        
+                        <div class="alert alert-info mt-20">
+                            <i class="fas fa-info-circle"></i>
+                            For production, use Let's Encrypt or a trusted CA. See documentation for details.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h2><i class="fas fa-terminal"></i> Output</h2>
+                    </div>
+                    <div class="card-body">
+                        <pre class="output-box" id="sslOutput">Certificate generation output will appear here...</pre>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Security Section -->
+            <section id="section-security" class="section">
+                <div class="row">
+                    <div class="card">
+                        <div class="card-header">
+                            <h2><i class="fas fa-search"></i> Security Scan</h2>
+                        </div>
+                        <div class="card-body">
+                            <p class="mb-20">Run comprehensive security scans including Trivy, CIS Benchmark, and secrets detection:</p>
+                            <button class="btn btn-primary" onclick="runSecurityScan()">
+                                <i class="fas fa-play"></i> Run Full Security Scan
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h2><i class="fas fa-archive"></i> Backup</h2>
+                        </div>
+                        <div class="card-body">
+                            <p class="mb-20">Create encrypted backups of databases and configurations:</p>
+                            <div class="btn-group">
+                                <button class="btn btn-primary" onclick="createBackup('all')">
+                                    <i class="fas fa-download"></i> Backup All
+                                </button>
+                                <button class="btn" onclick="createBackup('configs')">Configs Only</button>
+                                <button class="btn" onclick="createBackup('postgresql')">PostgreSQL</button>
+                                <button class="btn" onclick="createBackup('mysql')">MySQL</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h2><i class="fas fa-terminal"></i> Output</h2>
+                        <button class="btn btn-sm" onclick="clearOutput('securityOutput')">
+                            <i class="fas fa-trash"></i> Clear
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <pre class="output-box large" id="securityOutput">Security scan and backup output will appear here...</pre>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Logs Section -->
+            <section id="section-logs" class="section">
+                <div class="card">
+                    <div class="card-header">
+                        <h2><i class="fas fa-file-alt"></i> System Logs</h2>
+                        <div class="log-controls">
+                            <select id="logType">
+                                <option value="hardening">Hardening Logs</option>
+                                <option value="docker">Docker Logs</option>
+                                <option value="auth">Auth Logs</option>
+                                <option value="ufw">Firewall Logs</option>
+                                <option value="syslog">Syslog</option>
+                            </select>
+                            <input type="number" id="logLines" value="100" min="10" max="1000">
+                            <button class="btn btn-sm" onclick="loadLogs()">
+                                <i class="fas fa-sync-alt"></i> Load
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <pre class="output-box large" id="logsOutput">Select a log type and click Load...</pre>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Settings Section -->
+            <section id="section-settings" class="section">
+                <div class="card">
+                    <div class="card-header">
+                        <h2><i class="fas fa-key"></i> Change Password</h2>
+                    </div>
+                    <div class="card-body">
+                        <form id="passwordForm">
+                            <div class="form-group">
+                                <label for="currentPassword">Current Password</label>
+                                <input type="password" id="currentPassword" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="newPassword">New Password</label>
+                                <input type="password" id="newPassword" required minlength="8">
+                            </div>
+                            <div class="form-group">
+                                <label for="confirmPassword">Confirm New Password</label>
+                                <input type="password" id="confirmPassword" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Change Password
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h2><i class="fas fa-info-circle"></i> About VPS-Zero</h2>
+                    </div>
+                    <div class="card-body">
+                        <p>VPS-Zero is an enterprise-grade server hardening solution for Ubuntu 24.04 LTS.</p>
+                        <br>
+                        <table class="info-table">
+                            <tr><td>Version</td><td>1.0.0</td></tr>
+                            <tr><td>License</td><td>MIT</td></tr>
+                            <tr><td>Documentation</td><td><a href="https://github.com/ApiCentraal/VPS-Zero" target="_blank">GitHub Repository</a></td></tr>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Modal -->
+    <div class="modal" id="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">Modal Title</h3>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="modalBody">
+                Modal content
+            </div>
+            <div class="modal-footer">
+                <button class="btn" onclick="closeModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast notifications -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script src="/js/dashboard.js"></script>
+</body>
+</html>

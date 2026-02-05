@@ -1,0 +1,246 @@
+#!/bin/bash
+################################################################################
+# VPS-Zero Dashboard Command
+# Start, stop, en beheer de VPS-Zero web dashboard
+#
+# Usage: vps-zero-dashboard [--start|--stop|--restart|--status|--yes]
+################################################################################
+
+set -euo pipefail
+
+# Colors
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m'
+
+info() { echo -e "${BLUE}[INFO]${NC} $*"; }
+success() { echo -e "${GREEN}[SUCCESS]${NC} $*"; }
+warning() { echo -e "${YELLOW}[WARNING]${NC} $*"; }
+error() { echo -e "${RED}[ERROR]${NC} $*"; }
+
+# Configuration
+SERVICE_NAME="vps-zero-dashboard"
+DASHBOARD_PORT="${DASHBOARD_PORT:-8080}"
+
+# Find dashboard directory
+find_dashboard_dir() {
+    # Check common locations
+    local locations=(
+        "/opt/vps-zero/dashboard"
+        "/usr/local/share/vps-zero/dashboard"
+        "$(dirname "$(readlink -f "$0")")"
+        "$HOME/VPS-Zero/dashboard"
+    )
+    
+    for loc in "${locations[@]}"; do
+        if [[ -f "${loc}/src/server.js" ]]; then
+            echo "$loc"
+            return 0
+        fi
+    done
+    
+    # Not found
+    return 1
+}
+
+show_help() {
+    echo "VPS-Zero Dashboard - Server Configuration GUI"
+    echo ""
+    echo "Gebruik: vps-zero-dashboard [OPTIE]"
+    echo ""
+    echo "Opties:"
+    echo "  --start, --yes, -y    Start de dashboard"
+    echo "  --stop                Stop de dashboard"
+    echo "  --restart             Herstart de dashboard"
+    echo "  --status              Toon dashboard status"
+    echo "  --foreground, -f      Start in foreground mode (niet als service)"
+    echo "  --help, -h            Toon deze help tekst"
+    echo ""
+    echo "Voorbeelden:"
+    echo "  vps-zero-dashboard --start     # Start de dashboard service"
+    echo "  vps-zero-dashboard --yes       # Start de dashboard service"
+    echo "  vps-zero-dashboard -f          # Start in foreground (voor debugging)"
+    echo ""
+    echo "Service beheer:"
+    echo "  sudo systemctl status $SERVICE_NAME"
+    echo "  sudo systemctl restart $SERVICE_NAME"
+    echo "  sudo journalctl -u $SERVICE_NAME -f"
+}
+
+check_service_installed() {
+    if [[ -f "/etc/systemd/system/${SERVICE_NAME}.service" ]]; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+start_dashboard() {
+    local foreground="${1:-false}"
+    
+    if [[ "$foreground" == "true" ]]; then
+        # Start in foreground mode
+        DASHBOARD_DIR=$(find_dashboard_dir) || {
+            error "Dashboard directory niet gevonden"
+            exit 1
+        }
+        
+        if ! command -v node &> /dev/null; then
+            error "Node.js is niet geïnstalleerd"
+            exit 1
+        fi
+        
+        if [[ ! -d "${DASHBOARD_DIR}/node_modules" ]]; then
+            info "Installeren van npm dependencies..."
+            cd "$DASHBOARD_DIR"
+            npm install --production
+        fi
+        
+        info "Dashboard starten in foreground mode op poort ${DASHBOARD_PORT}..."
+        info "Druk Ctrl+C om te stoppen"
+        echo ""
+        
+        cd "$DASHBOARD_DIR"
+        DASHBOARD_PORT="${DASHBOARD_PORT}" node src/server.js
+    else
+        # Start as systemd service
+        if ! check_service_installed; then
+            error "Dashboard service is niet geïnstalleerd"
+            info "Installeer eerst met: cd /path/to/dashboard && sudo ./install-dashboard.sh"
+            exit 1
+        fi
+        
+        if [[ $EUID -ne 0 ]]; then
+            error "Root rechten nodig om service te starten"
+            info "Gebruik: sudo vps-zero-dashboard --start"
+            exit 1
+        fi
+        
+        info "Dashboard service starten..."
+        systemctl start "$SERVICE_NAME"
+        
+        sleep 2
+        
+        if systemctl is-active --quiet "$SERVICE_NAME"; then
+            local SERVER_IP=$(hostname -I | awk '{print $1}')
+            success "Dashboard gestart!"
+            echo ""
+            echo "╔══════════════════════════════════════════════════════════════╗"
+            echo "║   Dashboard URL: http://${SERVER_IP}:${DASHBOARD_PORT}       "
+            echo "║   Login: admin / changeme                                    ║"
+            echo "╚══════════════════════════════════════════════════════════════╝"
+        else
+            error "Dashboard service kon niet worden gestart"
+            journalctl -u "$SERVICE_NAME" --no-pager -n 10
+            exit 1
+        fi
+    fi
+}
+
+stop_dashboard() {
+    if ! check_service_installed; then
+        error "Dashboard service is niet geïnstalleerd"
+        exit 1
+    fi
+    
+    if [[ $EUID -ne 0 ]]; then
+        error "Root rechten nodig om service te stoppen"
+        info "Gebruik: sudo vps-zero-dashboard --stop"
+        exit 1
+    fi
+    
+    info "Dashboard service stoppen..."
+    systemctl stop "$SERVICE_NAME"
+    success "Dashboard gestopt"
+}
+
+restart_dashboard() {
+    if ! check_service_installed; then
+        error "Dashboard service is niet geïnstalleerd"
+        exit 1
+    fi
+    
+    if [[ $EUID -ne 0 ]]; then
+        error "Root rechten nodig om service te herstarten"
+        info "Gebruik: sudo vps-zero-dashboard --restart"
+        exit 1
+    fi
+    
+    info "Dashboard service herstarten..."
+    systemctl restart "$SERVICE_NAME"
+    
+    sleep 2
+    
+    if systemctl is-active --quiet "$SERVICE_NAME"; then
+        local SERVER_IP=$(hostname -I | awk '{print $1}')
+        success "Dashboard herstart!"
+        info "URL: http://${SERVER_IP}:${DASHBOARD_PORT}"
+    else
+        error "Dashboard service kon niet worden gestart"
+        exit 1
+    fi
+}
+
+show_status() {
+    if ! check_service_installed; then
+        warning "Dashboard service is niet geïnstalleerd"
+        
+        DASHBOARD_DIR=$(find_dashboard_dir 2>/dev/null) && {
+            info "Dashboard directory gevonden: $DASHBOARD_DIR"
+            info "Installeer de service met: cd $DASHBOARD_DIR && sudo ./install-dashboard.sh"
+        }
+        return
+    fi
+    
+    echo ""
+    echo "╔══════════════════════════════════════════════════════════════╗"
+    echo "║   VPS-Zero Dashboard Status                                  ║"
+    echo "╚══════════════════════════════════════════════════════════════╝"
+    echo ""
+    
+    if systemctl is-active --quiet "$SERVICE_NAME"; then
+        local SERVER_IP=$(hostname -I | awk '{print $1}')
+        success "Service: ACTIEF"
+        info "URL: http://${SERVER_IP}:${DASHBOARD_PORT}"
+    else
+        warning "Service: GESTOPT"
+    fi
+    
+    echo ""
+    echo "Service details:"
+    systemctl status "$SERVICE_NAME" --no-pager -n 5 2>/dev/null || true
+}
+
+# Main
+main() {
+    case "${1:-}" in
+        --start|--yes|-y)
+            start_dashboard false
+            ;;
+        --stop)
+            stop_dashboard
+            ;;
+        --restart)
+            restart_dashboard
+            ;;
+        --status)
+            show_status
+            ;;
+        --foreground|-f)
+            start_dashboard true
+            ;;
+        --help|-h|"")
+            show_help
+            ;;
+        *)
+            error "Onbekende optie: $1"
+            echo ""
+            show_help
+            exit 1
+            ;;
+    esac
+}
+
+main "$@"
